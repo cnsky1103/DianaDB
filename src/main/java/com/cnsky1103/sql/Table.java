@@ -19,6 +19,11 @@ public class Table {
     }
 
     private int recordSize = 0; // bytes that one record contains
+    /*
+     * this pointer is like a cursor
+     * it points to the first byte as if the file is an array
+     */
+    private int ptr = 0;
 
     public synchronized int getRecordSize() {
         if (recordSize != 0) {
@@ -33,8 +38,8 @@ public class Table {
                 else
                     size += column.length;
             }
-            /** 前四位保存下一个record在文件中是第几条 */
-            recordSize = size + 4;
+            /** 第1位是有效位，后4位存下一条记录的地址 */
+            recordSize = size + 1 + 4;
             return recordSize;
         }
     }
@@ -44,5 +49,5 @@ class Column {
     public String name;
     public Syntax.Type type;
     public boolean isPrimaryKey;
-    public int length; // only meaningful when type == CHAR
+    public int length; // 4 if INT, 8 if DOUBLE, variable if CHAR
 }
