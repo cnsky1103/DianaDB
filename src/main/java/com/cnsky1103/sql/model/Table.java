@@ -1,27 +1,41 @@
-package com.cnsky1103.sql;
+package com.cnsky1103.sql.model;
 
+import java.io.Serializable;
 import java.util.List;
 import java.util.Map;
 
-public class Table {
+import com.cnsky1103.sql.model.Syntax.Type;
 
-    public String name; // table
+import lombok.Getter;
 
-    public List<Column> columns;
-    private Map<Column, Integer> columnIndex;
+public class Table implements SQLModel {
+
+    @Getter
+    private String name; // table
+
+    @Getter
+    private List<Column> columns;
+
+    // TODO: 这玩意有啥用啊
+    private Map<String, Integer> columnIndex;
+
+    private Map<String, Column> columnName;
 
     public Table(String name, List<Column> columns) {
         this.name = name;
         this.columns = columns;
         for (int i = 0; i < columns.size(); ++i) {
-            columnIndex.put(columns.get(i), i);
+            columnIndex.put(columns.get(i).name, i);// why
+        }
+        for (Column c : columns) {
+            columnName.put(c.name, c);
         }
     }
 
     private int recordSize = 0; // bytes that one record contains
     /*
-     * this pointer is like a cursor
-     * it points to the first byte as if the file is an array
+     * This pointer is like a cursor.
+     * It points to the first byte as if the file is an array
      */
     private int ptr = 0;
 
@@ -42,6 +56,10 @@ public class Table {
             recordSize = size + 1 + 4;
             return recordSize;
         }
+    }
+
+    public Column getColumnByName(String name) {
+        return columnName.getOrDefault(name, null);
     }
 }
 

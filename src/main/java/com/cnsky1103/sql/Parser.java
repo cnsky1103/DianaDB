@@ -3,6 +3,8 @@ package com.cnsky1103.sql;
 import java.text.ParseException;
 import java.util.regex.Pattern;
 
+import com.cnsky1103.sql.model.Instruction;
+
 public class Parser {
     
     public static Instruction parse(String command) {

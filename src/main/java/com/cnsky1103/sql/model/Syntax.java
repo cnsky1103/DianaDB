@@ -1,6 +1,6 @@
-package com.cnsky1103.sql;
+package com.cnsky1103.sql.model;
 
-public class Syntax {
+public class Syntax implements SQLModel {
     public enum Operator {
         SELECT, UPDATE, CREATE, DELETE, INSERT
     }
