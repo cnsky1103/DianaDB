@@ -1,0 +1,35 @@
+package com.cnsky1103.sql.memory;
+
+import static org.junit.Assert.assertTrue;
+
+import java.util.ArrayList;
+
+import com.cnsky1103.sql.model.Column;
+import com.cnsky1103.sql.model.Record;
+import com.cnsky1103.sql.model.Syntax;
+import com.cnsky1103.sql.model.Table;
+import com.cnsky1103.sql.model.Value;
+
+import org.junit.Test;
+
+public class MemoryManagerTest {
+    private Table table = new Table("test", new ArrayList<Column>() {
+        {
+            add(new Column("c1", Syntax.Type.INT, true));
+            add(new Column("c1", Syntax.Type.DOUBLE, false));
+            add(new Column("c1", Syntax.Type.CHAR, false, 10));
+        }
+    });
+    private Record record = new Record() {
+        {
+            set(0, new Value(114));
+            set(1, new Value(514.1919));
+            set(2, new Value("yjsp"));
+        }
+    };
+
+    @Test
+    public void test() {
+        assertTrue(true);
+    }
+}
