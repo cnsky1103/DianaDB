@@ -3,51 +3,61 @@ package com.cnsky1103.sql.model;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.List;
 
 import com.cnsky1103.sql.model.Syntax.Type;
 
 public class Record implements SQLModel{
-    List<Value> values;
+    Value[] values;
 
-    public Record() {
-        values = new ArrayList<>();
+    String tableName;
+
+    // which table this record belongs to
+    transient Table table;
+
+    public Record(Table table) {
+        this.table = table;
+        values = new Value[table.getColumns().size()];
     }
 
     public void set(int index, Value v) {
-        values.set(index, v);
+        values[index]=v;
     }
 
-    public byte[] toBytes(Table table, int next) {
+    public byte[] toBytes(int next) {
         ByteBuffer bbf = ByteBuffer.allocate(table.getRecordSize());
         bbf.put((byte) 0b00000001); // valid bit
         bbf.putInt(next); // points to next record
         for (int i = 0; i < table.getColumns().size(); ++i) {
             Column c = table.getColumns().get(i);
             if (c.type == Type.INT) {
-                bbf.putInt(values.get(i).getVINT());
+                bbf.putInt(values[i].getVINT());
             } else if (c.type == Type.DOUBLE) {
-                bbf.putDouble(values.get(i).getVDOUBLE());
+                bbf.putDouble(values[i].getVDOUBLE());
             } else {
-                bbf.put(Arrays.copyOf(values.get(i).getVString().getBytes(), c.length));
+                bbf.put(Arrays.copyOf(values[i].getVString().getBytes(), c.length));
             }
         }
 
         return bbf.array();
     }
 
-    public byte[] toBytes(Table table) {
+    /**
+     * @deprecated
+     * @see toBytes(int next)
+     * @return
+     */
+    public byte[] toBytes() {
         ByteBuffer bbf = ByteBuffer.allocate(table.getRecordSize());
         bbf.put((byte) 0b00000001); // valid bit
-        List<Column> columns = table.getColumns();
+        ArrayList<Column> columns = table.getColumns();
         for (int i = 0; i < columns.size(); ++i) {
             Column c = columns.get(i);
             if (c.type == Type.INT) {
-                bbf.putInt(values.get(i).getVINT());
+                bbf.putInt(values[i].getVINT());
             } else if (c.type == Type.DOUBLE) {
-                bbf.putDouble(values.get(i).getVDOUBLE());
+                bbf.putDouble(values[i].getVDOUBLE());
             } else {
-                bbf.put(Arrays.copyOf(values.get(i).getVString().getBytes(), c.length));
+                bbf.put(Arrays.copyOf(values[i].getVString().getBytes(), c.length));
             }
         }
 

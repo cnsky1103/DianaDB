@@ -1,6 +1,6 @@
 package com.cnsky1103.sql.model;
 
-import java.util.List;
+import java.util.ArrayList;
 
 import com.cnsky1103.sql.model.Syntax.Operator;
 
@@ -16,7 +16,7 @@ import lombok.Setter;
 public class Instruction implements SQLModel {
     private Syntax.Operator op;
     private String tableName;
-    private List<Column> columns; //in CREATE or in SELECT
-    private List<Value> values; //in insert
-    private List<Condition> conditions; //in where clause
+    private ArrayList<Column> columns; //in CREATE or in SELECT
+    private ArrayList<Value> values; //in insert
+    private ArrayList<Condition> conditions; //in where clause
 }
