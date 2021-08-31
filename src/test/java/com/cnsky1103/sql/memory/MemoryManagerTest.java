@@ -2,6 +2,7 @@ package com.cnsky1103.sql.memory;
 
 import static org.junit.Assert.assertTrue;
 
+import java.io.IOException;
 import java.util.ArrayList;
 
 import com.cnsky1103.sql.model.Column;
@@ -20,7 +21,7 @@ public class MemoryManagerTest {
             add(new Column("c1", Syntax.Type.CHAR, false, 10));
         }
     });
-    private Record record = new Record() {
+    private Record record = new Record(table) {
         {
             set(0, new Value(114));
             set(1, new Value(514.1919));
@@ -30,6 +31,12 @@ public class MemoryManagerTest {
 
     @Test
     public void test() {
-        assertTrue(true);
+        try {
+            MemoryManager.writeARecord(table, record, 0);
+        } catch (IOException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+            assertTrue(false);
+        }
     }
 }
