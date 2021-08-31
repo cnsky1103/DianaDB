@@ -44,6 +44,13 @@ public final class MemoryManager {
         return offset % blockSize;
     }
 
+    /**
+     * 获取一条记录
+     * @param table 表
+     * @param offset 这条记录在整个表里的偏移量
+     * @return
+     * @throws IOException
+     */
     public static byte[] getARecord(Table table, int offset) throws IOException {
         int idx = getBlockIndex(offset);
         Block b = m.getOrDefault(new Pair<String, Integer>(table.getName(), idx), null);
@@ -58,7 +65,11 @@ public final class MemoryManager {
                 q.removeFirst();
             }
             try {
-                b.raf = new RandomAccessFile(new File(Config.dataPath + "table/" + table.getName() + ".rec"), "rw");
+                File file = new File(Config.dataPath + "table/" + table.getName() + Config.recordSuffix);
+                if (!file.exists()) {
+                    file.createNewFile();
+                }
+                b.raf = new RandomAccessFile(file, "rw");
                 b.buffer = new byte[blockSize];
                 b.sign = new Pair<String, Integer>(table.getName(), idx);
                 b.raf.seek(idx * blockSize);
@@ -69,6 +80,7 @@ public final class MemoryManager {
 
             } catch (IOException e) {
                 //TODO: 完善错误处理
+                e.printStackTrace();
                 throw e;
             }
         }
@@ -80,6 +92,13 @@ public final class MemoryManager {
         return bytes;
     }
 
+    /**
+     * 写一条记录进内存
+     * @param table 表
+     * @param record 要写的记录
+     * @param offset 要写进这个表的位置
+     * @throws IOException
+     */
     public static void writeARecord(Table table, Record record, int offset) throws IOException {
         int idx = getBlockIndex(offset);
         Block b = m.getOrDefault(new Pair<String, Integer>(table.getName(), idx), null);
@@ -95,7 +114,11 @@ public final class MemoryManager {
                 q.removeFirst();
             }
             try {
-                b.raf = new RandomAccessFile(new File(Config.dataPath + "table/" + table.getName() + ".rec"), "rw");
+                File file = new File(Config.dataPath + table.getName() + Config.recordSuffix);
+                if (!file.exists()) {
+                    file.createNewFile();
+                }
+                b.raf = new RandomAccessFile(file, "rw");
                 b.buffer = new byte[blockSize];
                 b.sign = new Pair<String, Integer>(table.getName(), idx);
                 b.raf.seek(idx * blockSize);
@@ -106,11 +129,14 @@ public final class MemoryManager {
 
             } catch (IOException e) {
                 //TODO: 完善错误处理
+                e.printStackTrace();
                 throw e;
             }
         }
         int start = getBlockOffset(offset);
-        byte[] recordBytes = record.toBytes(table);
+
+        // offset是要写进表的位置，再加上表的一条记录的大小就是下一条记录的位置
+        byte[] recordBytes = record.toBytes(offset + table.getRecordSize());
         for (int i = 0; i < recordBytes.length; ++i) {
             //前5位不用写，是有效位和下一条记录地址
             b.buffer[start + 5 + i] = recordBytes[i];
