@@ -69,6 +69,9 @@ public final class MemoryManager {
                 if (!file.exists()) {
                     file.createNewFile();
                 }
+                if (file.length() < offset) {
+                    throw new IOException("offset out of file length");
+                }
                 b.raf = new RandomAccessFile(file, "rw");
                 b.buffer = new byte[blockSize];
                 b.sign = new Pair<String, Integer>(table.getName(), idx);
@@ -137,9 +140,9 @@ public final class MemoryManager {
 
         // offset是要写进表的位置，再加上表的一条记录的大小就是下一条记录的位置
         byte[] recordBytes = record.toBytes(offset + table.getRecordSize());
-        for (int i = 0; i < recordBytes.length; ++i) {
+        for (int i = 5; i < recordBytes.length; ++i) {
             //前5位不用写，是有效位和下一条记录地址
-            b.buffer[start + 5 + i] = recordBytes[i];
+            b.buffer[start + i] = recordBytes[i];
         }
         b.dirty = true;
 
@@ -156,6 +159,7 @@ public final class MemoryManager {
                         }
                         break;
                     }
+                    ++cnt;
                 }
             } catch (IOException e) {
                 /* 
