@@ -11,11 +11,15 @@ import java.util.concurrent.ConcurrentLinkedDeque;
 import com.cnsky1103.Config;
 import com.cnsky1103.sql.model.Record;
 import com.cnsky1103.sql.model.Table;
-import com.cnsky1103.utils.Pair;
+
+import org.apache.commons.lang3.tuple.ImmutablePair;
+import org.apache.commons.lang3.tuple.Pair;
 
 public final class MemoryManager {
     /*
      * 4k per block, at most 256MByte memory will be allocated to store table data
+     * no record will be written across blocks
+     * which means that the max length of one record is 4096
      */
     private final static int blockSize = 4096;
     private final static int maxBlock = 1024 * 64;
@@ -51,9 +55,16 @@ public final class MemoryManager {
      * @return
      * @throws IOException
      */
-    public static byte[] getARecord(Table table, int offset) throws IOException {
+    public static byte[] readARecord(Table table, int offset) throws IOException {
         int idx = getBlockIndex(offset);
-        Block b = m.getOrDefault(new Pair<String, Integer>(table.getName(), idx), null);
+        int start = getBlockOffset(offset);
+
+        // 如果从当前位置开始读，会超出一个block的范围，那就从下一个block读
+        if (start + table.getRecordSize() >= blockSize) {
+            return readARecord(table, (idx + 1) * blockSize);
+        }
+
+        Block b = m.getOrDefault(new ImmutablePair<String, Integer>(table.getName(), idx), null);
         if (b != null) {
             q.remove(b);
             q.addLast(b);
@@ -65,7 +76,7 @@ public final class MemoryManager {
                 q.removeFirst();
             }
             try {
-                File file = new File(Config.dataPath + "table/" + table.getName() + Config.recordSuffix);
+                File file = new File(Config.dataPath + table.getName() + Config.recordSuffix);
                 if (!file.exists()) {
                     file.createNewFile();
                 }
@@ -74,7 +85,7 @@ public final class MemoryManager {
                 }
                 b.raf = new RandomAccessFile(file, "rw");
                 b.buffer = new byte[blockSize];
-                b.sign = new Pair<String, Integer>(table.getName(), idx);
+                b.sign = new ImmutablePair<String, Integer>(table.getName(), idx);
                 b.raf.seek(idx * blockSize);
                 b.raf.read(b.buffer);
 
@@ -88,7 +99,6 @@ public final class MemoryManager {
             }
         }
         byte[] bytes = new byte[table.getRecordSize()];
-        int start = getBlockOffset(offset);
         for (int i = 0; i < table.getRecordSize(); ++i) {
             bytes[i] = b.buffer[start + i];
         }
@@ -104,7 +114,15 @@ public final class MemoryManager {
      */
     public static void writeARecord(Table table, Record record, int offset) throws IOException {
         int idx = getBlockIndex(offset);
-        Block b = m.getOrDefault(new Pair<String, Integer>(table.getName(), idx), null);
+        int start = getBlockOffset(offset);
+
+        // 如果从当前位置开始写，会超出一个block的范围，那就不要了，写进下一个block
+        if (start + table.getRecordSize() >= blockSize) {
+            writeARecord(table, record, (idx + 1) * blockSize);
+            return;
+        }
+
+        Block b = m.getOrDefault(new ImmutablePair<String, Integer>(table.getName(), idx), null);
         if (b != null) {
             q.remove(b);
             q.addLast(b);
@@ -123,7 +141,7 @@ public final class MemoryManager {
                 }
                 b.raf = new RandomAccessFile(file, "rw");
                 b.buffer = new byte[blockSize];
-                b.sign = new Pair<String, Integer>(table.getName(), idx);
+                b.sign = new ImmutablePair<String, Integer>(table.getName(), idx);
                 b.raf.seek(idx * blockSize);
                 b.raf.read(b.buffer);
 
@@ -136,7 +154,6 @@ public final class MemoryManager {
                 throw e;
             }
         }
-        int start = getBlockOffset(offset);
 
         // offset是要写进表的位置，再加上表的一条记录的大小就是下一条记录的位置
         byte[] recordBytes = record.toBytes(offset + table.getRecordSize());
@@ -152,7 +169,7 @@ public final class MemoryManager {
             int cnt = 1;
             try {
                 while (true) {
-                    byte[] next = getARecord(table, offset + cnt * table.getRecordSize());
+                    byte[] next = readARecord(table, offset + cnt * table.getRecordSize());
                     if (next[0] == 1) {
                         for (int i = 0; i < 4; ++i) {
                             b.buffer[start + 1 + i] = next[1 + i];
@@ -175,7 +192,7 @@ public final class MemoryManager {
 
     private static void writeBack(Block b) throws IOException {
         if (b.dirty) {
-            b.raf.seek(b.sign.r * blockSize);
+            b.raf.seek(b.sign.right * blockSize);
             b.raf.write(b.buffer);
         }
     }
@@ -190,7 +207,7 @@ public final class MemoryManager {
 class Block {
     byte[] buffer;
     RandomAccessFile raf;
-    Pair<String, Integer> sign; //table name and block index
+    ImmutablePair<String, Integer> sign; //table name and block index
     boolean dirty;
 
     Block() {
