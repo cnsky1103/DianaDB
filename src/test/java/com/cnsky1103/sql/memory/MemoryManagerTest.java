@@ -30,11 +30,24 @@ public class MemoryManagerTest {
     };
 
     @Test
-    public void test() {
+    public void testWriteARecord() {
         try {
             MemoryManager.writeARecord(table, record, 0);
+            MemoryManager.writeBackAll();
         } catch (IOException e) {
             // TODO Auto-generated catch block
+            e.printStackTrace();
+            assertTrue(false);
+        }
+    }
+
+    @Test
+    public void testReadARecord() {
+        try{
+            byte[] b = MemoryManager.readARecord(table, 0);
+            assertTrue(b.length == table.getRecordSize());
+            assertTrue(true);
+        } catch (IOException e) {
             e.printStackTrace();
             assertTrue(false);
         }
