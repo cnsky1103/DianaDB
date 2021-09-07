@@ -6,13 +6,18 @@ import java.util.Arrays;
 
 import com.cnsky1103.sql.model.Syntax.Type;
 
-public class Record implements SQLModel{
-    Value[] values;
+import lombok.Getter;
+import lombok.Setter;
 
-    String tableName;
+@Getter
+@Setter
+public class Record implements SQLModel{
+    private Value[] values;
+
+    private transient String tableName;
 
     // which table this record belongs to
-    transient Table table;
+    private transient Table table;
 
     public Record(Table table) {
         this.table = table;

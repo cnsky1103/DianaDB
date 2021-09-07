@@ -2,8 +2,6 @@ package com.cnsky1103.sql.model;
 
 import java.util.ArrayList;
 
-import com.cnsky1103.sql.model.Syntax.Operator;
-
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;

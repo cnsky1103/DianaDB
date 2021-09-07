@@ -1,7 +1,5 @@
 package com.cnsky1103.sql.model;
 
-import com.cnsky1103.sql.model.Syntax.CompareOp;
-
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
