@@ -55,7 +55,7 @@ public final class MemoryManager {
      * 获取一条记录
      * @param table 表
      * @param offset 这条记录在整个表里的偏移量
-     * @return
+     * @return 这条记录的byte数组表示；如果超过了文件大小则返回null
      * @throws IOException
      */
     public static byte[] readARecord(Table table, int offset) throws IOException {
@@ -84,7 +84,7 @@ public final class MemoryManager {
                     file.createNewFile();
                 }
                 if (file.length() < offset) {
-                    throw new IOException("offset out of file length");
+                    return null;
                 }
                 b.raf = new RandomAccessFile(file, "rw");
                 b.buffer = new byte[blockSize];
