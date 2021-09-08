@@ -1,11 +1,14 @@
 package com.cnsky1103.sql.model;
 
+import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 
 import com.cnsky1103.sql.exception.SQLModelException;
+import com.cnsky1103.sql.memory.MemoryManager;
 import com.cnsky1103.sql.model.Syntax.Type;
 
 import lombok.Getter;
@@ -18,7 +21,8 @@ public class Table implements SQLModel {
     @Getter
     private ArrayList<Column> columns;
 
-    // TODO: 这玩意有啥用啊
+    // 在select等需要指定列的语句中，需要将列名转换成record中的序号
+    @Getter
     private transient Map<String, Integer> columnIndex;
 
     private transient Map<String, Column> columnName;
@@ -56,7 +60,7 @@ public class Table implements SQLModel {
                 else
                     size += column.length;
             }
-            /** 第1位是有效位，后4位存下一条记录的地址 */
+            // 第1位是有效位，后4位存下一条记录的地址
             recordSize = size + 1 + 4;
             return recordSize;
         }
@@ -70,6 +74,7 @@ public class Table implements SQLModel {
      * 将从内存中读到的字符数组转换成本表的一条记录
      * @param b 一条记录的byte数组表示
      * @return 该记录的Record表示
+     * @throws SQLException 传入的数组长度不符
      */
     public Record convertToRecord(byte[] b) throws SQLModelException {
         if (b.length != getRecordSize()) {
@@ -105,5 +110,19 @@ public class Table implements SQLModel {
         }
 
         return record;
+    }
+
+    public void reset() {
+        ptr = 0;
+    }
+
+    public synchronized Record getNext() throws SQLModelException, IOException {
+        byte[] b = MemoryManager.readARecord(this, ptr);
+        ptr += getRecordSize();
+        if (Objects.nonNull(b)) {
+            return convertToRecord(b);
+        } else {
+            return null;
+        }
     }
 }
