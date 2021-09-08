@@ -16,6 +16,9 @@ import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
 
 public final class MemoryManager {
+    private MemoryManager(){
+    }
+
     /*
      * 4k per block, at most 256MByte memory will be allocated to store table data
      * no record will be written across blocks
