@@ -168,7 +168,7 @@ public final class MemoryManager {
 
         /* 如果当前记录原本是无效的，那他的偏移量就没有意义了，要重新计算 */
         if (b.buffer[start] == 0) {
-            b.buffer[0] = (byte) 0b00000001;
+            b.buffer[0] = Config.ValidByte;
             int cnt = 1;
             try {
                 while (true) {

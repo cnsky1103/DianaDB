@@ -4,6 +4,7 @@ import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Arrays;
 
+import com.cnsky1103.Config;
 import com.cnsky1103.sql.model.Syntax.Type;
 
 import lombok.Getter;
@@ -30,7 +31,7 @@ public class Record implements SQLModel{
 
     public byte[] toBytes(int next) {
         ByteBuffer bbf = ByteBuffer.allocate(table.getRecordSize());
-        bbf.put((byte) 0b00000001); // valid bit
+        bbf.put(Config.ValidByte); // valid bit
         bbf.putInt(next); // points to next record
         for (int i = 0; i < table.getColumns().size(); ++i) {
             Column c = table.getColumns().get(i);
@@ -53,7 +54,7 @@ public class Record implements SQLModel{
      */
     public byte[] toBytes() {
         ByteBuffer bbf = ByteBuffer.allocate(table.getRecordSize());
-        bbf.put((byte) 0b00000001); // valid bit
+        bbf.put(Config.ValidByte); // valid bit
         ArrayList<Column> columns = table.getColumns();
         for (int i = 0; i < columns.size(); ++i) {
             Column c = columns.get(i);
