@@ -1,11 +1,11 @@
 package com.cnsky1103.sql.model;
 
 public class Syntax implements SQLModel {
-    public enum Operator {
+    public static enum Operator {
         SELECT, UPDATE, CREATE, DELETE, INSERT
     }
 
-    public enum CompareOp {
+    public static enum CompareOp {
         lt("<") {
             @Override
             public <T extends Comparable<T>> boolean compare(T v1, T v2) {
@@ -61,7 +61,7 @@ public class Syntax implements SQLModel {
         }
     }
 
-    public enum Type {
+    public static enum Type {
         INT, DOUBLE, CHAR
     }
 }

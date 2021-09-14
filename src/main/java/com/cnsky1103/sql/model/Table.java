@@ -16,7 +16,7 @@ import lombok.Getter;
 public class Table implements SQLModel {
 
     @Getter
-    private String name; // table
+    private String name;
 
     @Getter
     private ArrayList<Column> columns;
@@ -90,9 +90,9 @@ public class Table implements SQLModel {
         buffer.flip();
 
         // 读第一个字节，有效位
-        buffer.get();
+        record.setValid(buffer.get());
         // 再读一个int，偏移量
-        buffer.getInt();
+        record.setNext(buffer.getInt());
 
         // 记录的列号
         int index = 0;
@@ -112,6 +112,14 @@ public class Table implements SQLModel {
         return record;
     }
 
+    public int getColumnIndex(String columnName) {
+        return columnIndex.get(columnName);
+    }
+
+    public int getColumnIndex(Column column) {
+        return columnIndex.get(column.name);
+    }
+
     public void reset() {
         ptr = 0;
     }
@@ -124,5 +132,10 @@ public class Table implements SQLModel {
         } else {
             return null;
         }
+    }
+
+    public synchronized void write(Record record) throws IOException {
+        // TODO 需要处理下一条记录地址的问题，否则这个函数没法用
+        MemoryManager.writeARecord(this, record, record.getNext());
     }
 }

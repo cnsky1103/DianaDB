@@ -5,7 +5,7 @@ import java.util.regex.Pattern;
 
 import com.cnsky1103.sql.model.Instruction;
 
-public class Parser {
+public final class Parser {
     
     public static Instruction parse(String command) {
         Instruction ins = new Instruction();

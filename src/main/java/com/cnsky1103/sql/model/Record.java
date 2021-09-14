@@ -20,6 +20,9 @@ public class Record implements SQLModel{
     // which table this record belongs to
     private transient Table table;
 
+    private byte valid;
+    private int next;
+
     public Record(Table table) {
         this.table = table;
         values = new Value[table.getColumns().size()];
@@ -29,10 +32,11 @@ public class Record implements SQLModel{
         values[index]=v;
     }
 
-    public byte[] toBytes(int next) {
+    public byte[] toBytes(int nextOffset) {
         ByteBuffer bbf = ByteBuffer.allocate(table.getRecordSize());
         bbf.put(Config.ValidByte); // valid bit
-        bbf.putInt(next); // points to next record
+        bbf.putInt(nextOffset); // points to next record
+        this.next = nextOffset;
         for (int i = 0; i < table.getColumns().size(); ++i) {
             Column c = table.getColumns().get(i);
             if (c.type == Type.INT) {

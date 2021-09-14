@@ -30,10 +30,9 @@ public final class MemoryManager {
     /**
      * l:organize blocks in a doubly linked list way
      * m:organize blocks in a hash map
-     * use these two data structures to implement an LRU strategy
-     * Pair<String, Integer> has
-     * @param String tableName
-     * @param Integer blockIndex
+     * use these two data structures to implement an LRU strategy;
+     * {@code Pair<String, Integer>} has
+     * String as tableName and Integer as blockIndex
      */
     private static Deque<Block> q;
     private static Map<Pair<String, Integer>, Block> m;
