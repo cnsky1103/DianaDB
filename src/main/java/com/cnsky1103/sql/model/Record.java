@@ -32,6 +32,11 @@ public class Record implements SQLModel{
         values[index]=v;
     }
 
+    // TODO 是否要增加错误判断？
+    public void setAll(Value[] values) {
+        this.values = values;
+    }
+
     public byte[] toBytes(int nextOffset) {
         ByteBuffer bbf = ByteBuffer.allocate(table.getRecordSize());
         bbf.put(Config.ValidByte); // valid bit

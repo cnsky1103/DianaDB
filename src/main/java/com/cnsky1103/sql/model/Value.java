@@ -59,4 +59,15 @@ public class Value implements SQLModel {
             return vString.equals(other.vString);
         }
     }
+
+    @Override
+    public int hashCode() {
+        if (type == Type.INT) {
+            return vINT;
+        } else if (type == Type.DOUBLE) {
+            return BigDecimal.valueOf(vDOUBLE).hashCode();
+        } else {
+            return vString.hashCode();
+        }
+    }
 }

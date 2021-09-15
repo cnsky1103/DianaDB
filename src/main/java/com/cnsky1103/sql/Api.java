@@ -3,17 +3,24 @@ package com.cnsky1103.sql;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.ObjectOutputStream;
+import java.util.ArrayList;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 import com.cnsky1103.Config;
 import com.cnsky1103.sql.exception.SQLException;
+import com.cnsky1103.sql.exception.SQLModelException;
 import com.cnsky1103.sql.exception.TableExistException;
 import com.cnsky1103.sql.exception.TableNotFoundException;
+import com.cnsky1103.sql.model.Condition;
 import com.cnsky1103.sql.model.Instruction;
 import com.cnsky1103.sql.model.Table;
+import com.cnsky1103.sql.model.Record;
+import com.cnsky1103.sql.model.Value;
 import com.cnsky1103.sql.model.Syntax.Operator;
+import com.cnsky1103.sql.model.Syntax.Type;
 
 public final class Api {
     // cannot create an instance of Api
@@ -28,21 +35,28 @@ public final class Api {
         tableLock = new ConcurrentHashMap<>();
     }
 
+    /**
+     * 执行一条SQL指令
+     * @param command
+     */
     public static void execute(String command) {
         execute(Parser.parse(command));
     }
 
-    private static void execute(Instruction ins) {
+    public static void execute(Instruction ins) {
         try {
             if (ins.getOp() == Operator.SELECT) {
-
+                checkType(ins);
+                select(ins);
             } else if (ins.getOp() == Operator.CREATE) {
-                createTable(ins);
+                create(ins);
             } else if (ins.getOp() == Operator.UPDATE) {
-
+                checkType(ins);
             } else if (ins.getOp() == Operator.DELETE) {
-
+                checkType(ins);
             } else if (ins.getOp() == Operator.INSERT) {
+                checkType(ins);
+                insert(ins);
             }
         } catch (SQLException e) {
             e.printStackTrace();
@@ -58,7 +72,42 @@ public final class Api {
         return tables.get(name);
     }
 
-    private static void createTable(Instruction ins) throws TableExistException, IOException {
+    /**
+     * 判断指令中的类型和表的类型是否一致
+     * 允许int向double的转换
+     * @param ins
+     * @throws SQLException
+     */
+    private static void checkType(Instruction ins) throws SQLException {
+        for (Condition condition : ins.getConditions()) {
+            if (condition.getLeft().type != condition.getRight().getType()) {
+                if (!(condition.getLeft().type == Type.DOUBLE && condition.getRight().getType() == Type.INT)) {
+                    throw new SQLException("column type of " + condition.getLeft().name
+                            + " not match, should receive type " + condition.getLeft().type);
+                }
+            }
+        }
+    }
+
+    /**
+     * 判断一条记录是否符合条件
+     * @param record
+     * @param conditions
+     * @return
+     */
+    private static boolean satisfy(Record record, ArrayList<Condition> conditions) {
+        Table table = record.getTable();
+        Value[] values = record.getValues();
+        for (Condition condition : conditions) {
+            int columnIndex = table.getColumnIndex(condition.getLeft());
+            if (!values[columnIndex].equals(condition.getRight())) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private static void create(Instruction ins) throws TableExistException, IOException {
         if (tables.containsKey(ins.getTableName())) {
             throw new TableExistException("Table " + ins.getTableName() + " already exists");
         }
@@ -74,5 +123,23 @@ public final class Api {
             e.printStackTrace();
             throw new IOException("Failed in local file IO when creating table " + ins.getTableName());
         }
+    }
+
+    private static ArrayList<Record> select(Instruction ins) throws SQLException, IOException {
+        ArrayList<Record> result = new ArrayList<>();
+        Table table = getTable(ins.getTableName());
+        table.reset();
+        Record record;
+        while ((record = table.getNext()) != null) {
+            if (satisfy(record, ins.getConditions())) {
+                result.add(record);
+            }
+        }
+        return result;
+    }
+
+    private static void insert(Instruction ins) throws TableNotFoundException, SQLModelException, IOException {
+        Table table = getTable(ins.getTableName());
+        table.insert(ins);
     }
 }

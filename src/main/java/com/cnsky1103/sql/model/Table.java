@@ -7,11 +7,13 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 
+import com.cnsky1103.Config;
 import com.cnsky1103.sql.exception.SQLModelException;
 import com.cnsky1103.sql.memory.MemoryManager;
 import com.cnsky1103.sql.model.Syntax.Type;
 
 import lombok.Getter;
+import lombok.Setter;
 
 public class Table implements SQLModel {
 
@@ -27,12 +29,15 @@ public class Table implements SQLModel {
 
     private transient Map<String, Column> columnName;
 
-    private int recordSize = 0; // bytes that one record contains
-    /*
-     * This pointer is like a cursor.
-     * It points to the first byte as if the file is an array
-     */
+    // bytes that one record contains
+    private int recordSize = 0;
+
+    // a cursor which points to next byte
     private int ptr = 0;
+
+    @Getter
+    @Setter
+    private int primaryKeyIndex;
 
     public Table(String name, ArrayList<Column> columns) {
         this.name = name;
@@ -40,7 +45,10 @@ public class Table implements SQLModel {
         columnIndex = new HashMap<>();
         columnName = new HashMap<>();
         for (int i = 0; i < columns.size(); ++i) {
-            columnIndex.put(columns.get(i).name, i);// why
+            columnIndex.put(columns.get(i).name, i);
+            if (columns.get(i).isPrimaryKey) {
+                primaryKeyIndex = i;
+            }
         }
         for (Column c : columns) {
             columnName.put(c.name, c);
@@ -125,17 +133,48 @@ public class Table implements SQLModel {
     }
 
     public synchronized Record getNext() throws SQLModelException, IOException {
-        byte[] b = MemoryManager.readARecord(this, ptr);
-        ptr += getRecordSize();
-        if (Objects.nonNull(b)) {
-            return convertToRecord(b);
-        } else {
-            return null;
+        while (true) {
+            byte[] b = MemoryManager.readARecord(this, ptr);
+            if (Objects.nonNull(b)) {
+                if (b[0] == Config.ValidByte) {
+                    Record record = convertToRecord(b);
+                    ptr = record.getNext();
+                    return record;
+                } else {
+                    ptr += getRecordSize();
+                }
+            } else {
+                return null;
+            }
         }
     }
 
     public synchronized void write(Record record) throws IOException {
         // TODO 需要处理下一条记录地址的问题，否则这个函数没法用
         MemoryManager.writeARecord(this, record, record.getNext());
+    }
+
+    public synchronized void insert(Instruction ins) throws IOException, SQLModelException {
+        reset();
+        Record record = new Record(this);
+        record.setAll(ins.getValues().toArray(new Value[0]));
+        record.setNext(0);
+        record.setValid(Config.ValidByte);
+        while (true) {
+            byte[] b = MemoryManager.readARecord(this, ptr);
+            if (Objects.nonNull(b)) {
+                Record curRecord = convertToRecord(b);
+                if (curRecord.getValues()[primaryKeyIndex].equals(record.getValues()[primaryKeyIndex])) {
+                    throw new SQLModelException("key " + columns.get(primaryKeyIndex).name + " already exists");
+                }
+                ptr += getRecordSize();
+            } else {
+                b = MemoryManager.readARecord(this, ptr - getRecordSize());
+                Record lastRecord = convertToRecord(b);
+                lastRecord.setNext(ptr);
+                MemoryManager.writeARecord(this, lastRecord, ptr - getRecordSize());
+                MemoryManager.writeARecord(this, record, ptr);
+            }
+        }
     }
 }
