@@ -4,6 +4,8 @@ import lombok.AllArgsConstructor;
 
 @AllArgsConstructor
 public class Column implements SQLModel {
+    private static final long serialVersionUID = 3983417834946588509L;
+
     public String name;
     public Syntax.Type type;
     public boolean isPrimaryKey;

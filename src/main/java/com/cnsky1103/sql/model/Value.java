@@ -12,6 +12,8 @@ import lombok.Setter;
 @Setter
 @NoArgsConstructor
 public class Value implements SQLModel {
+    private static final long serialVersionUID = -8748452130667022511L;
+
     private Syntax.Type type;
     private int vINT;
     private double vDOUBLE;

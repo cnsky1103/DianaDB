@@ -16,6 +16,7 @@ import lombok.Getter;
 import lombok.Setter;
 
 public class Table implements SQLModel {
+    private static final long serialVersionUID = 6681437001845264647L;
 
     @Getter
     private String name;

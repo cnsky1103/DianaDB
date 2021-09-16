@@ -13,6 +13,8 @@ import lombok.Setter;
 @Getter
 @Setter
 public class Record implements SQLModel{
+    private static final long serialVersionUID = -1735801801695293483L;
+
     private Value[] values;
 
     private transient String tableName;

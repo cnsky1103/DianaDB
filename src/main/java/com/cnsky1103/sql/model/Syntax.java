@@ -1,6 +1,8 @@
 package com.cnsky1103.sql.model;
 
 public class Syntax implements SQLModel {
+    private static final long serialVersionUID = -5433793115882496403L;
+
     public static enum Operator {
         SELECT, UPDATE, CREATE, DELETE, INSERT
     }

@@ -10,6 +10,7 @@ import lombok.Setter;
 @Getter
 @Setter
 public class Condition implements SQLModel{
+    private static final long serialVersionUID = 7683957511257188914L;
     private Syntax.CompareOp op;
     private Column left;
     private Value right;
