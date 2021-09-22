@@ -11,7 +11,7 @@ import lombok.Setter;
 @Getter
 @Setter
 @NoArgsConstructor
-public class Value implements SQLModel {
+public class Value implements SQLModel, Comparable<Value> {
     private static final long serialVersionUID = -8748452130667022511L;
 
     private Syntax.Type type;
@@ -70,6 +70,21 @@ public class Value implements SQLModel {
             return BigDecimal.valueOf(vDOUBLE).hashCode();
         } else {
             return vString.hashCode();
+        }
+    }
+
+    @Override
+    public int compareTo(Value other) {
+        if (type == other.type) {
+            if (type == Type.INT) {
+                return (vINT < other.vINT) ? -1 : ((vINT == other.vINT) ? 0 : 1);
+            } else if (type == Type.DOUBLE) {
+                return Double.valueOf(vDOUBLE).compareTo(Double.valueOf(other.vDOUBLE));
+            } else {
+                return vString.compareTo(other.vString);
+            }
+        } else {
+            
         }
     }
 }

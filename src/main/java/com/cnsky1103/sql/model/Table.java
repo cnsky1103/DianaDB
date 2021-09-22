@@ -31,10 +31,10 @@ public class Table implements SQLModel {
     private transient Map<String, Column> columnName;
 
     // bytes that one record contains
-    private int recordSize = 0;
+    private transient int recordSize = 0;
 
     // a cursor which points to next byte
-    private int ptr = 0;
+    private transient int ptr = 0;
 
     @Getter
     @Setter
