@@ -1,3 +1,5 @@
-# FriedDB
- 
-Java的List不实现Serializable接口，但是ArrayList实现了；因此本项目的一切List接口全部用ArrayList实现
+# Diana
+
+关注嘉然，顿顿解馋！
+
+Java实现的数据库。
