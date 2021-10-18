@@ -84,7 +84,14 @@ public class Value implements SQLModel, Comparable<Value> {
                 return vString.compareTo(other.vString);
             }
         } else {
-            
+            if (type == Type.INT && other.type == Type.DOUBLE) {
+                return Double.valueOf(vINT).compareTo(Double.valueOf(other.vDOUBLE));
+            } else if (type == Type.DOUBLE && other.type == Type.INT) {
+                return Double.valueOf(vDOUBLE).compareTo(Double.valueOf(other.vINT));
+            } else {
+                // TODO 类型不匹配时应该怎么处理？
+                return 0;
+            }
         }
     }
 }
