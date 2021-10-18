@@ -55,7 +55,6 @@ public final class Api {
             } else if (ins.getOp() == Operator.DELETE) {
                 checkType(ins);
             } else if (ins.getOp() == Operator.INSERT) {
-                checkType(ins);
                 insert(ins);
             }
         } catch (SQLException e) {
@@ -100,7 +99,7 @@ public final class Api {
         Value[] values = record.getValues();
         for (Condition condition : conditions) {
             int columnIndex = table.getColumnIndex(condition.getLeft());
-            if (!values[columnIndex].equals(condition.getRight())) {
+            if (condition.getOp().compare(values[columnIndex], condition.getRight())) {
                 return false;
             }
         }
@@ -113,6 +112,7 @@ public final class Api {
         }
         Table table = new Table(ins.getTableName(), ins.getColumns());
         tableLock.put(table.getName(), new ReentrantReadWriteLock());
+        tables.put(table.getName(), table);
         try {
             FileOutputStream fos = new FileOutputStream(Config.tablesDataPath);
             ObjectOutputStream oos = new ObjectOutputStream(fos);
