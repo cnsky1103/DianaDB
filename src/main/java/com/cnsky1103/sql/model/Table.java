@@ -86,6 +86,9 @@ public class Table implements SQLModel {
      * @throws SQLException 传入的数组长度不符
      */
     public Record convertToRecord(byte[] b) throws SQLModelException {
+        if (b == null) {
+            return null;
+        }
         if (b.length != getRecordSize()) {
             throw new SQLModelException("cannot convert byte array with length " + b.length
                     + " to a record with length " + getRecordSize());
@@ -161,21 +164,35 @@ public class Table implements SQLModel {
         record.setAll(ins.getValues().toArray(new Value[0]));
         record.setNext(0);
         record.setValid(Config.ValidByte);
+
         while (true) {
             byte[] b = MemoryManager.readARecord(this, ptr);
-            if (Objects.nonNull(b)) {
+            if (Objects.nonNull(b) && b[0] == Config.ValidByte) {
                 Record curRecord = convertToRecord(b);
                 if (curRecord.getValues()[primaryKeyIndex].equals(record.getValues()[primaryKeyIndex])) {
                     throw new SQLModelException("key " + columns.get(primaryKeyIndex).name + " already exists");
                 }
                 ptr += getRecordSize();
-            } else {
-                b = MemoryManager.readARecord(this, ptr - getRecordSize());
-                Record lastRecord = convertToRecord(b);
-                lastRecord.setNext(ptr);
-                MemoryManager.writeARecord(this, lastRecord, ptr - getRecordSize());
-                MemoryManager.writeARecord(this, record, ptr);
+                continue;
             }
+
+            // 读到了第一个invalid的记录，或者是读到了文件末尾
+
+            // 先读上一条记录
+            byte[] lastRecordBytes = MemoryManager.readARecord(this, ptr - getRecordSize());
+            if (Objects.isNull(lastRecordBytes)) {
+                // 上一条记录是null，说明当前就是第一条记录，ptr=0
+                // record.setNext(next); 当前不支持删除的情况下，后面肯定没有，以后再说
+                MemoryManager.writeARecord(this, record, 0);
+            } else {
+                // 有上一条记录的话，一定是valid的
+                Record lastRecord = convertToRecord(lastRecordBytes);
+                record.setNext(lastRecord.getNext());
+                lastRecord.setNext(ptr);
+                MemoryManager.writeARecord(this, record, ptr);
+                MemoryManager.writeARecord(this, lastRecord, ptr - getRecordSize());
+            }
+            break;
         }
     }
 }

@@ -58,6 +58,9 @@ public final class MemoryManager {
      * @throws IOException
      */
     public static byte[] readARecord(Table table, int offset) throws IOException {
+        if (offset < 0) {
+            return null;
+        }
         int idx = getBlockIndex(offset);
         int start = getBlockOffset(offset);
 
@@ -82,7 +85,7 @@ public final class MemoryManager {
                 if (!file.exists()) {
                     file.createNewFile();
                 }
-                if (file.length() < offset) {
+                if (file.length() <= offset) {
                     return null;
                 }
                 b.raf = new RandomAccessFile(file, "rw");
@@ -159,14 +162,13 @@ public final class MemoryManager {
 
         // offset是要写进表的位置，再加上表的一条记录的大小就是下一条记录的位置
         byte[] recordBytes = record.toBytes(offset + table.getRecordSize());
-        for (int i = 5; i < recordBytes.length; ++i) {
-            //前5位不用写，是有效位和下一条记录地址
+        for (int i = 0; i < recordBytes.length; ++i) {
             b.buffer[start + i] = recordBytes[i];
         }
         b.dirty = true;
 
         /* 如果当前记录原本是无效的，那他的偏移量就没有意义了，要重新计算 */
-        if (b.buffer[start] == 0) {
+        /* if (b.buffer[start] == 0) {
             b.buffer[0] = Config.ValidByte;
             int cnt = 1;
             try {
@@ -181,15 +183,15 @@ public final class MemoryManager {
                     ++cnt;
                 }
             } catch (IOException e) {
-                /* 
-                 * 如果读一条记录出了问题，说明超过了文件的大小，这条记录之后再也没有有效的记录了
-                 * 那就把下一条记录的地址设为0
-                 */
                 for (int i = 0; i < 4; ++i) {
                     b.buffer[start + 1 + i] = (byte) 0;
                 }
             }
-        }
+        } */
+    }
+
+    public static void writeARecord(Table table, Record record) throws IOException {
+        writeARecord(table, record, record.getNext() - table.getRecordSize());
     }
 
     private static void writeBack(Block b) throws IOException {
