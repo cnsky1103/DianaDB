@@ -18,4 +18,9 @@ public class Instruction implements SQLModel {
     private ArrayList<Column> columns; //in CREATE or in SELECT
     private ArrayList<Value> values; //in insert
     private ArrayList<Condition> conditions; //in where clause
+
+    @Override
+    public String toString() {
+        return op.name() + " " + tableName + " " + values.toString();
+    }
 }

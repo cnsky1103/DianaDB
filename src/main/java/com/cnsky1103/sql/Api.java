@@ -99,7 +99,7 @@ public final class Api {
         Value[] values = record.getValues();
         for (Condition condition : conditions) {
             int columnIndex = table.getColumnIndex(condition.getLeft());
-            if (condition.getOp().compare(values[columnIndex], condition.getRight())) {
+            if (!condition.getOp().compare(values[columnIndex], condition.getRight())) {
                 return false;
             }
         }
@@ -125,7 +125,7 @@ public final class Api {
         }
     }
 
-    private static ArrayList<Record> select(Instruction ins) throws SQLException, IOException {
+    public static ArrayList<Record> select(Instruction ins) throws SQLException, IOException {
         ArrayList<Record> result = new ArrayList<>();
         Table table = getTable(ins.getTableName());
         table.reset();

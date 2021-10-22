@@ -16,7 +16,7 @@ import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
 
 public final class MemoryManager {
-    private MemoryManager(){
+    private MemoryManager() {
     }
 
     /*
@@ -64,9 +64,17 @@ public final class MemoryManager {
         int idx = getBlockIndex(offset);
         int start = getBlockOffset(offset);
 
+        // 会出现readARecord(table, ptr - recordSize)的情况，如果此时的ptr刚好是4096的倍数
+        // ptr指向的记录刚好在某个block的开头，那上一条记录的地址应当是
+        // 4096 - 4096 % recordSize - recordSize
+        if (start + table.getRecordSize() == blockSize) {
+            return readARecord(table, blockSize - blockSize % table.getRecordSize() - table.getRecordSize());
+        }
+
         // 如果从当前位置开始读，会超出一个block的范围，那就从下一个block读
-        if (start + table.getRecordSize() >= blockSize) {
-            return readARecord(table, (idx + 1) * blockSize);
+        if (start + table.getRecordSize() > blockSize) {
+            table.setPtr((idx + 1) * blockSize);
+            return readARecord(table, table.getPtr());
         }
 
         Block b = m.getOrDefault(new ImmutablePair<String, Integer>(table.getName(), idx), null);
@@ -193,6 +201,24 @@ public final class MemoryManager {
     public static void writeARecord(Table table, Record record) throws IOException {
         writeARecord(table, record, record.getNext() - table.getRecordSize());
     }
+
+    /**
+     * 特别判断了当要写进的offset加上一条记录会超过block时
+     * 一般的处理是写进下一个block
+     * 而这里是从当前block里找到最后一条有效记录
+     * 
+     * @param table
+     * @param record
+     * @param offset 要写进的地方
+     * @throws IOException
+     */
+    public static void writeLastRecord(Table table, Record record, int offset) throws IOException {
+        if (getBlockOffset(offset) + table.getRecordSize() >= blockSize) {
+            writeARecord(table, record, blockSize - blockSize % table.getRecordSize() - table.getRecordSize());
+        } else {
+            writeARecord(table, record, offset);
+        }
+    } 
 
     private static void writeBack(Block b) throws IOException {
         if (b.dirty) {

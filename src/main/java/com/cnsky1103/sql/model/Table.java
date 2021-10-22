@@ -33,6 +33,8 @@ public class Table implements SQLModel {
     // bytes that one record contains
     private transient int recordSize = 0;
 
+    @Getter
+    @Setter
     // a cursor which points to next byte
     private transient int ptr = 0;
 
@@ -177,12 +179,13 @@ public class Table implements SQLModel {
             }
 
             // 读到了第一个invalid的记录，或者是读到了文件末尾
+            System.out.println(ins);
 
             // 先读上一条记录
             byte[] lastRecordBytes = MemoryManager.readARecord(this, ptr - getRecordSize());
             if (Objects.isNull(lastRecordBytes)) {
                 // 上一条记录是null，说明当前就是第一条记录，ptr=0
-                // record.setNext(next); 当前不支持删除的情况下，后面肯定没有，以后再说
+                // record.setNext(next); 当前不支持删除的情况下，后面肯定没有；以后再说
                 MemoryManager.writeARecord(this, record, 0);
             } else {
                 // 有上一条记录的话，一定是valid的
@@ -190,7 +193,7 @@ public class Table implements SQLModel {
                 record.setNext(lastRecord.getNext());
                 lastRecord.setNext(ptr);
                 MemoryManager.writeARecord(this, record, ptr);
-                MemoryManager.writeARecord(this, lastRecord, ptr - getRecordSize());
+                MemoryManager.writeLastRecord(this, lastRecord, ptr - getRecordSize());
             }
             break;
         }
