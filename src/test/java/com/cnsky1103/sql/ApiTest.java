@@ -115,7 +115,7 @@ public class ApiTest {
             e.printStackTrace();
         }
 
-        Instruction select = new Instruction();
+        /* Instruction select = new Instruction();
         select.setOp(Operator.SELECT);
         select.setTableName("table1");
         ArrayList<Condition> conditions = new ArrayList<>();
@@ -124,6 +124,6 @@ public class ApiTest {
         conditions.add(new Condition(CompareOp.eq, table1.getColumnByName("c2"), new Value(1.2)));
         select.setConditions(conditions);
         ArrayList<Record> records = Api.select(select);
-        assertTrue(true);
+        assertTrue(true); */
     }
 }

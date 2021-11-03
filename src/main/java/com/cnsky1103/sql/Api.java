@@ -19,6 +19,9 @@ import com.cnsky1103.sql.model.Instruction;
 import com.cnsky1103.sql.model.Table;
 import com.cnsky1103.sql.model.Record;
 import com.cnsky1103.sql.model.Value;
+import com.cnsky1103.sql.model.Condition.AndClause;
+import com.cnsky1103.sql.model.Condition.OrClause;
+import com.cnsky1103.sql.model.Condition.WhereClause;
 import com.cnsky1103.sql.model.Syntax.Operator;
 import com.cnsky1103.sql.model.Syntax.Type;
 
@@ -78,11 +81,14 @@ public final class Api {
      * @throws SQLException
      */
     private static void checkType(Instruction ins) throws SQLException {
-        for (Condition condition : ins.getConditions()) {
-            if (condition.getLeft().type != condition.getRight().getType()) {
-                if (!(condition.getLeft().type == Type.DOUBLE && condition.getRight().getType() == Type.INT)) {
-                    throw new SQLException("column type of " + condition.getLeft().name
-                            + " not match, should receive type " + condition.getLeft().type);
+        for (OrClause orClause : ins.getWhereClause().getOrClauses()) {
+            for (AndClause andClause : orClause.getAndClauses()) {
+                Condition condition = andClause.getCondition();
+                if (condition.getLeft().type != condition.getRight().getType()) {
+                    if (!(condition.getLeft().type == Type.DOUBLE && condition.getRight().getType() == Type.INT)) {
+                        throw new SQLException("column type of " + condition.getLeft().name
+                                + " not match, should receive type " + condition.getLeft().type);
+                    }
                 }
             }
         }
@@ -94,10 +100,20 @@ public final class Api {
      * @param conditions
      * @return
      */
-    private static boolean satisfy(Record record, ArrayList<Condition> conditions) {
+    private static boolean satisfy(Record record, WhereClause whereClause) {
+        for (OrClause orClause : whereClause.getOrClauses()) {
+            if (satisfyAnd(record, orClause.getAndClauses())) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static boolean satisfyAnd(Record record, ArrayList<AndClause> andClauses) {
         Table table = record.getTable();
         Value[] values = record.getValues();
-        for (Condition condition : conditions) {
+        for (AndClause andClause : andClauses) {
+            Condition condition = andClause.getCondition();
             int columnIndex = table.getColumnIndex(condition.getLeft());
             if (!condition.getOp().compare(values[columnIndex], condition.getRight())) {
                 return false;
@@ -131,7 +147,7 @@ public final class Api {
         table.reset();
         Record record;
         while ((record = table.getNext()) != null) {
-            if (satisfy(record, ins.getConditions())) {
+            if (satisfy(record, ins.getWhereClause())) {
                 result.add(record);
             }
         }
@@ -142,4 +158,26 @@ public final class Api {
         Table table = getTable(ins.getTableName());
         table.insert(ins);
     }
+
+    /* private static void delete(Instruction ins) throws TableNotFoundException, SQLModelException, IOException {
+        Table table = getTable(ins.getTableName());
+        table.reset();
+        Record record;
+        while ((record = table.getNext()) != null) {
+            if (satisfy(record, ins.getWhereClause())) {
+                record.setValid(Config.InvalidByte);
+            }
+        }
+    }
+
+    private static void update(Instruction ins) throws TableNotFoundException, SQLModelException, IOException {
+        Table table = getTable(ins.getTableName());
+        table.reset();
+        Record record;
+        while ((record = table.getNext()) != null) {
+            if (satisfy(record, ins.getWhereClause())) {
+                
+            }
+        }
+    } */
 }
